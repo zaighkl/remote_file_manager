@@ -81,15 +81,15 @@ def main():
 
     socket_server, socket_client  = create_server()
     while True:
-        result = socket_client.recv(1024).decode()
+        result = socket_client.recv(7).decode()
 
         print("result is -=" + result + "=-")
 
-        if result == "download":
+        if result == "cmd_dwn":
             download(socket_client)
-        elif result == "upload":
+        elif result == "cmd_upl":
             upload(socket_client)
-        elif result == "list":
+        elif result == "cmd_lst":
             send_list(socket_client)
         else:
             break
@@ -97,4 +97,5 @@ def main():
     socket_server.close()
     socket_client.close()
 
-main()
+while True:
+    main()

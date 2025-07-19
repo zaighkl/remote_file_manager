@@ -6,22 +6,46 @@ from tkinter import *
 import client
 from client import *
 
+
 parent = ttk.Window(themename ="darkly")
 
-def send_file_to_user():
+def send_file_name_to_user():
+    lb = parent.nametowidget('dwn.lb')
+    selected_idx = lb.curselection()
+    file_name = lb.get(selected_idx)
     child3 = tk.Toplevel(parent)
+    child3.grab_set()
     child3.title("Remote file manager")
     child3.geometry("600x400")
     title_label = ttk.Label(master=child3, text="Remote file manager", font="Georgia 24 bold")
     title_label.pack()
-    title = ttk.Label(master=child3, text="ur mom", font="Georgia 10")
+    button = Button(master=child3, text="OK", command=child3.destroy)
+    button.pack()
     title_label.pack()
+    if client.download(file_name):
+        title = ttk.Label(master = child3, text="downloaded successfully!!!", font="Georgia 10")
+    else:
+        title = ttk.Label(master=child3, text="seems like there was a problem, the file wasn't downloaded :(((", font="Georgia 10")
     title.pack()
 
 def fileselector():
-    server_socket = client.get_server_socket()
-    file_name = fd.askopenfilename()
-    send_to_server(server_socket, file_name, True)
+    path = fd.askopenfilename()
+    child4 = tk.Toplevel(parent)
+    child4.grab_set()
+    child4.title("Remote file manager")
+    child4.geometry("600x400")
+    title_label = ttk.Label(master=child4, text="Remote file manager", font="Georgia 24 bold")
+    title_label.pack()
+    button = Button(master=child4, text="OK", command=child4.destroy)
+    button.pack()
+    title_label.pack()
+
+    if client.upload(path):
+        title = ttk.Label(master=child4, text="Uploaded succeesfully!!", font="Georgia 10")
+    else:
+        title = ttk.Label(master=child4, text="seems like there was a problem, the file wasn't uploaded :(", font="Georgia 10")
+    title.pack()
+
 
 def upload():
 
@@ -39,24 +63,23 @@ def upload():
     child1.mainloop()
 
 def download():
-    server_socket = client.get_server_socket()
-    file_names = get_file_names(server_socket)
 
-    child2 = tk.Toplevel(parent)
+    file_names = get_file_names()
+    child2 = tk.Toplevel(parent, name="dwn")
     child2.title("Remote file manager")
     child2.geometry("600x400")
     title_label = ttk.Label(master=child2, text="Remote file manager", font="Georgia 24 bold")
     title_label.pack()
     title = ttk.Label(master=child2, text="which file do you want to download", font="Georgia 10")
     title.pack()
-    listbox = Listbox(master = child2, width=30, height=10, selectmode = SINGLE)
+    listbox = Listbox(name='lb', master = child2, width=30, height=10, selectmode = SINGLE)
     for i in range(len(file_names)):
         listbox.insert(i+1,file_names[i])
 
     for i in listbox.curselection():
         print(listbox.get(i))
     listbox.pack()
-    btn =  ttk.Button(master = child2, text="Upload", command = send_file_to_user)
+    btn =  ttk.Button(master = child2, text="Download", command = send_file_name_to_user )
     btn.pack()
 
 

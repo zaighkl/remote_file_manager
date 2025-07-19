@@ -2,10 +2,10 @@ import os
 import socket
 import json
 
-def get_file_names(s):
-    s.send("list".encode())
-    accept_from_server(s,False)
-    file_names_str = accept_from_server(s, False)
+def get_file_names():
+    socket_server = get_server_socket()
+    socket_server.send("cmd_lst".encode())
+    file_names_str = accept_from_server(False)
     file_names_arr = json.loads(file_names_str)
     return file_names_arr
 
@@ -33,8 +33,8 @@ def send_to_server(socket_server, data, encode=True):
         socket_server.send(data)
 
 
-def accept_from_server(socket_server, file_handle):
-
+def accept_from_server(file_handle):
+    socket_server = get_server_socket()
     raw = socket_server.recv(4)
     length = int.from_bytes(raw, signed = True)
     print(length)
@@ -56,55 +56,39 @@ def accept_from_server(socket_server, file_handle):
     print("we got a message that says " + result)
     return result
 
-def download(s,filename):
-
-    file_names = get_file_names(s)
-    print(file_names)
-    file_name = input("which file do you want to download")
-
+def download(file_name):
+    s = get_server_socket()
+    s.send("cmd_dwn".encode())
     send_to_server(s,file_name,True)
-
     file_handle = open(file_name, 'wb')
 
     try:
-        accept_from_server(s,file_handle)
+        accept_from_server(file_handle)
         file_handle.close()
+        return True
     except Exception as e:
         print(e)
         file_handle.close()
         os.remove(file_name)
+        return False
 
 
-def upload(s):
-    s.send("upload".encode())
-    path = input("enter a file path you want to upload")
-    if os.path.exists(path):
+def upload(path):
+    s = get_server_socket()
+    s.send("cmd_upl".encode())
+    file_name = path.split("/")[-1]
+    send_to_server(s, file_name, True)
 
-        file_name = path.split("/")[-1]
-        send_to_server(s,file_name,True)
+    file_handle = open(path,"rb")
+    file_content = file_handle.read()
 
-        file_handle = open(path,"rb")
-        file_content = file_handle.read()
+    try:
+        send_to_server(s,file_content, False)
+        return True
 
-        send_to_server(s,file_content,False)
-        print("finished uploading")
-    else:
-        print("this file path doesn't exist on your computer")
+    except:
+        return False
 
-
-def main():
-    socket_server = get_server_socket()
-
-    while True:
-        status = input("do you want to upload or download file. press anything else to exit")
-        if status == "download":
-            download(socket_server)
-        elif status == "upload":
-            upload(socket_server)
-        else:
-            break
-
-    socket_server.close()
 
 if __file__ == 'main':
     main()
