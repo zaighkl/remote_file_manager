@@ -9,19 +9,31 @@ from client import *
 
 parent = ttk.Window(themename ="darkly")
 
+def create_a_window(name=''):
+
+    if name:
+        child = tk.Toplevel(parent,name=name)
+    else:
+        child = tk.Toplevel(parent)
+
+    child.title("Remote file manager")
+    child.geometry("600x400")
+    title_label = ttk.Label(master=child, text="Remote file manager", font="Georgia 24 bold")
+    title_label.pack()
+    return child
+
 def send_file_name_to_user():
+
     lb = parent.nametowidget('dwn.lb')
     selected_idx = lb.curselection()
     file_name = lb.get(selected_idx)
-    child3 = tk.Toplevel(parent)
+
+    child3 = create_a_window()
     child3.grab_set()
-    child3.title("Remote file manager")
-    child3.geometry("600x400")
-    title_label = ttk.Label(master=child3, text="Remote file manager", font="Georgia 24 bold")
-    title_label.pack()
+
     button = Button(master=child3, text="OK", command=child3.destroy)
     button.pack()
-    title_label.pack()
+
     if client.download(file_name):
         title = ttk.Label(master = child3, text="downloaded successfully!!!", font="Georgia 10")
     else:
@@ -30,15 +42,10 @@ def send_file_name_to_user():
 
 def fileselector():
     path = fd.askopenfilename()
-    child4 = tk.Toplevel(parent)
+    child4 = create_a_window()
     child4.grab_set()
-    child4.title("Remote file manager")
-    child4.geometry("600x400")
-    title_label = ttk.Label(master=child4, text="Remote file manager", font="Georgia 24 bold")
-    title_label.pack()
     button = Button(master=child4, text="OK", command=child4.destroy)
     button.pack()
-    title_label.pack()
 
     if client.upload(path):
         title = ttk.Label(master=child4, text="Uploaded succeesfully!!", font="Georgia 10")
@@ -48,14 +55,8 @@ def fileselector():
 
 
 def upload():
-
-    child1 = tk.Toplevel( parent )
-    child1.title("Remote file manager")
-    child1.geometry("600x400")
-    title_label = ttk.Label(master = child1, text = "Remote file manager", font = "Georgia 24 bold")
-    title_label.pack()
+    child1 = create_a_window()
     title = ttk.Label(master = child1, text = "which file do you want to upload", font = "Georgia 10")
-    title_label.pack()
     title.pack()
     button1 = ttk.Button(master = child1, text = "chose file"  , command = fileselector)
     button1.pack(pady = '20px')
@@ -65,11 +66,7 @@ def upload():
 def download():
 
     file_names = get_file_names()
-    child2 = tk.Toplevel(parent, name="dwn")
-    child2.title("Remote file manager")
-    child2.geometry("600x400")
-    title_label = ttk.Label(master=child2, text="Remote file manager", font="Georgia 24 bold")
-    title_label.pack()
+    child2 = create_a_window("dwn")
     title = ttk.Label(master=child2, text="which file do you want to download", font="Georgia 10")
     title.pack()
     listbox = Listbox(name='lb', master = child2, width=30, height=10, selectmode = SINGLE)
