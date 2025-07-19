@@ -1,6 +1,7 @@
 import socket
 import json
 import os
+
 def create_server():
 
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -11,81 +12,89 @@ def create_server():
     print("got a client {}".format(client_address))
     return socket_server,socket_client
 
-def send_to_client(socket_client):
-    socket_client.send("hi".encode())
-    msg_recieved = socket_client.recv(1024)
-    print("message recieved" + msg_recieved.decode())
+def send_to_client(socket_client, data, encode=True):
 
-def download(socket_client):
-    file_names = ["cat.jpg,", "sunflower.jpg", "baloon.jpg"]
-    string_arr_json = json.dumps(file_names)
-    string_arr_json_len = len(string_arr_json)
-    packed_length = string_arr_json_len.to_bytes(4)
-    print(packed_length)
-
+    data_len = len(data)
+    packed_length = data_len.to_bytes(4)
     socket_client.send(packed_length)
-    socket_client.send(json.dumps(file_names).encode())
-    print("sent array of names")
+
+    if encode:
+        socket_client.send(data.encode())
+    else:
+        socket_client.send(data)
+
+def accept_from_client(socket_client, file_handle):
+
     raw = socket_client.recv(4)
     length = int.from_bytes(raw)
     print(length)
     message = ""
     result = ""
-    while length > 0:
-        message = socket_client.recv(1024).decode()
-        length = length - 1024
-        result = result + message
+    if file_handle:
+        while length > 0:
+            message1 = socket_client.recv(1024)
+            length = length - 1024
+            file_handle.write(message1)
+    else:
+        while length > 0:
+            message = socket_client.recv(1024).decode()
+            result = result + message
+            length = length - 1024
     print("we got a message that says " + result)
-    #check that the file exists
-    file_handle = open("files/" + result,"rb")
-    file_content = file_handle.read()
-    file_content_len = len(file_content)
-    socket_client.send(file_content_len.to_bytes(4))
-    socket_client.send(file_content)
-    print("sent file content")
+    return result
+
+def send_error():
+    pass
+
+def download(socket_client):
+    file_names = ["cat.jpg,", "sunflower.jpg", "baloon.jpg"]
+
+    string_arr_json = json.dumps(file_names)
+    send_to_client(socket_client, string_arr_json, True)
+    print("sent array of names")
+
+    file_name = accept_from_client(socket_client,None)
+    if os.path.exists("files/" + file_name):
+        file_handle = open("files/" + file_name,"rb")
+        file_content = file_handle.read()
+        send_to_client(socket_client, file_content, False)
+        file_handle.close()
+        print("sent file content")
+    else:
+        data_len = -1
+        packed_length = data_len.to_bytes(4, signed=True)
+        socket_client.send(packed_length)
+        print("the file doesn't exist")
 
 
 
 def upload(socket_client):
 
-    raw = socket_client.recv(4)
-    length = int.from_bytes(raw)
-    print(length)
-    message = ""
-    file_name = ""
-    while length > 0:
-        message = socket_client.recv(1024).decode()
-        length = length - 1024
-        file_name = file_name + message
-
+    file_name = accept_from_client(socket_client,None)
     print("file name is" + file_name)
-    raw = socket_client.recv(4)
-    length = int.from_bytes(raw)
-    print(length)
-    message = ""
-    file_content = ""
-    file_handle = open("files/" + file_name, "wb")
-    while length > 0:
-        message1 = socket_client.recv(1024)
-        length = length - 1024
-        file_handle.write(message1)
 
+    file_handle = open("files/" + file_name, "wb")
+    file_content = accept_from_client(socket_client, file_handle)
     print("file content is " + file_content)
+
     file_handle.close()
 
 def main():
 
     socket_server, socket_client  = create_server()
-    result = socket_client.recv(1024).decode()
+    while True:
+        result = socket_client.recv(1024).decode()
 
-    print("result is -=" + result + "=-")
+        print("result is -=" + result + "=-")
 
-    if result == "download":
-        download(socket_client)
-    elif result == "upload":
-        upload(socket_client)
-    else:
-        socket_server.close()
-        socket_client.close()
+        if result == "download":
+            download(socket_client)
+        elif result == "upload":
+            upload(socket_client)
+        else:
+            break
+
+    socket_server.close()
+    socket_client.close()
 
 main()
