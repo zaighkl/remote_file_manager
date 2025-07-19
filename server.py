@@ -43,15 +43,13 @@ def accept_from_client(socket_client, file_handle):
     print("we got a message that says " + result)
     return result
 
-def send_error():
-    pass
-
-def download(socket_client):
-    file_names = ["cat.jpg,", "sunflower.jpg", "baloon.jpg"]
-
-    string_arr_json = json.dumps(file_names)
+def send_list(socket_client):
+    dir_list = os.listdir("files")
+    string_arr_json = json.dumps(dir_list)
     send_to_client(socket_client, string_arr_json, True)
     print("sent array of names")
+
+def download(socket_client):
 
     file_name = accept_from_client(socket_client,None)
     if os.path.exists("files/" + file_name):
@@ -91,6 +89,8 @@ def main():
             download(socket_client)
         elif result == "upload":
             upload(socket_client)
+        elif result == "list":
+            send_list(socket_client)
         else:
             break
 

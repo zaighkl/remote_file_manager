@@ -1,5 +1,24 @@
 import os
 import socket
+import json
+
+def get_file_names(s):
+    s.send("list".encode())
+    accept_from_server(s,False)
+    file_names_str = accept_from_server(s, False)
+    file_names_arr = json.loads(file_names_str)
+    return file_names_arr
+
+_socket = None
+
+def get_server_socket():
+    global _socket
+
+    if _socket is None:
+        _socket = socket.socket()
+        _socket.connect(('127.0.0.1', 1800))
+
+    return _socket
 
 
 def send_to_server(socket_server, data, encode=True):
@@ -37,10 +56,10 @@ def accept_from_server(socket_server, file_handle):
     print("we got a message that says " + result)
     return result
 
-def download(s):
-    s.send("download".encode())
+def download(s,filename):
 
-    file_names_arr = accept_from_server(s,False)
+    file_names = get_file_names(s)
+    print(file_names)
     file_name = input("which file do you want to download")
 
     send_to_server(s,file_name,True)
@@ -74,16 +93,18 @@ def upload(s):
 
 
 def main():
-    s = socket.socket()
-    s.connect(('127.0.0.1', 1800))
+    socket_server = get_server_socket()
+
     while True:
         status = input("do you want to upload or download file. press anything else to exit")
         if status == "download":
-            download(s)
+            download(socket_server)
         elif status == "upload":
-            upload(s)
+            upload(socket_server)
         else:
             break
 
-    s.close()
-main()
+    socket_server.close()
+
+if __file__ == 'main':
+    main()
